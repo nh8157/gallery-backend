@@ -7,13 +7,11 @@ import (
 )
 
 func HandleHealthCheck(requests events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	fmt.Println("path is", requests.Path)
 	response := BuildResponse(200, "")
 	return response, nil
 }
 
 func HandleGallery(requests events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	fmt.Println("path is", requests.Path)
 	var response events.APIGatewayProxyResponse
 	var err error
 	switch requests.HTTPMethod {
@@ -26,7 +24,6 @@ func HandleGallery(requests events.APIGatewayProxyRequest) (events.APIGatewayPro
 	case "DELETE":
 		response, err = HandleGalleryDelete(requests)
 	}
-
 	return response, err
 }
 
