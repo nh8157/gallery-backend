@@ -3,10 +3,11 @@ package response
 import "encoding/json"
 
 const (
-	JsonParseError  = "Unable to parse JSON."
-	DynamoDbError   = "Internal server error."
-	S3Error         = "Internal server error"
-	FileDuplication = "File already exists"
+	JsonParseError       = "Unable to parse JSON."
+	FileDuplicationError = "File already exists"
+	AwsSessionError      = "Internal server error."
+	DynamoDbError        = "Internal server error."
+	S3Error              = "Internal server error."
 )
 
 type SuccessResponse struct {

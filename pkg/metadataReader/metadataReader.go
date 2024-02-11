@@ -4,7 +4,7 @@ import (
 	"io"
 	"log"
 
-	metadata "github.com/nh8157/gallery-backend/internal"
+	"github.com/nh8157/gallery-backend/internal/metadata"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/rwcarlsen/goexif/mknote"
 )

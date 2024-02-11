@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	gallery_response "github.com/nh8157/gallery-backend/internal/response"
 )
 
 func HandleHealthCheck(requests events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -18,11 +19,11 @@ func HandleHealthCheck(requests events.APIGatewayProxyRequest) (events.APIGatewa
 func HandleGallery(requests events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var response events.APIGatewayProxyResponse
 	var err error
-
+	var errResp gallery_response.ErrorResponse
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(os.Getenv("aws_region"))})
 	if err != nil {
-		err := fmt.Errorf("Failed to establish connection with aws")
-		response := BuildResponse(502, err.Error())
+		errResp.Msg = gallery_response.AwsSessionError
+		response := BuildResponse(502, gallery_response.ToString(&errResp))
 		return response, err
 	}
 
