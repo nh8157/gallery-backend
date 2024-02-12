@@ -22,13 +22,13 @@ func HandleGalleryGet(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 	var errResp response.ErrorResponse
 	mds, err := dynamo.DynamoGetItems("gallery")
 	if err != nil {
-		fmt.Println("unable to get items:", err)
+		fmt.Printf("unable to get items: %s\n", err)
 		errResp.Msg = err.Error()
 		return BuildResponse(502, response.ToString(&errResp)), nil
 	}
 	marshalled, err := json.Marshal(mds)
 	if err != nil {
-		fmt.Println("unable to marshal JSON:", err)
+		fmt.Printf("unable to marshal JSON: %s\n", err)
 		errResp.Msg = err.Error()
 		return BuildResponse(500, response.ToString(&errResp)), err
 	}
@@ -40,7 +40,7 @@ func HandleGalleryPut(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 	var errResp response.ErrorResponse
 	err := json.Unmarshal([]byte(requests.Body), &metadata)
 	if err != nil {
-		log.Println("cannot marshal JSON:", err)
+		log.Printf("cannot marshal JSON: %s\n", err)
 		errResp.Msg = response.JsonParseError
 		response := BuildResponse(500, response.ToString(&errResp))
 		return response, nil
@@ -48,7 +48,7 @@ func HandleGalleryPut(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 
 	item, err := dynamo.DynamoGetItem("gallery", metadata.FileName)
 	if err != nil {
-		log.Println("unable to get items", err)
+		log.Printf("unable to get items: %s\n", err)
 		errResp.Msg = response.DynamoDbError
 		return BuildResponse(502, response.ToString(&errResp)), nil
 	} else if !item.IsNil() {
@@ -64,7 +64,7 @@ func HandleGalleryPut(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 	urlStr, err := req.Presign(5 * time.Minute)
 
 	if err != nil {
-		log.Println("unable to presign url:", err)
+		log.Printf("unable to presign url: %s\n", err)
 		errResp.Msg = response.S3Error
 		response := BuildResponse(502, response.ToString(&errResp))
 		return response, nil
@@ -73,7 +73,7 @@ func HandleGalleryPut(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 	jsonResponse := map[string]string{"url": urlStr}
 	marshalledResponse, err := json.Marshal(jsonResponse)
 	if err != nil {
-		log.Println("unable to marshal JSON:", err)
+		log.Printf("unable to marshal JSON: %s\n", err)
 		errResp.Msg = response.JsonParseError
 		response := BuildResponse(500, response.ToString(&errResp))
 		return response, nil
@@ -93,7 +93,7 @@ func HandleGalleryDelete(requests events.APIGatewayProxyRequest, svc *s3.S3) (ev
 	var errResp response.ErrorResponse
 	err := json.Unmarshal([]byte(requests.Body), &md)
 	if err != nil {
-		log.Println("unable to unmarshal JSON:", err)
+		log.Printf("unable to unmarshal JSON: %s\n", err)
 		errResp.Msg = response.JsonParseError
 		response := BuildResponse(500, response.ToString(&errResp))
 		return response, nil
@@ -101,7 +101,7 @@ func HandleGalleryDelete(requests events.APIGatewayProxyRequest, svc *s3.S3) (ev
 
 	err = dynamo.DynamoDelete("gallery", md.FileName)
 	if err != nil {
-		log.Println("unable to delete metadata from database:", err)
+		log.Printf("unable to delete metadata from database: %s\n", err)
 		errResp.Msg = response.DynamoDbError
 		response := BuildResponse(502, response.ToString(&errResp))
 		return response, nil
@@ -113,7 +113,7 @@ func HandleGalleryDelete(requests events.APIGatewayProxyRequest, svc *s3.S3) (ev
 	})
 
 	if err != nil {
-		log.Println("unable to delete object from S3 bucket", err)
+		log.Printf("unable to delete object from S3 bucket: %s\n", err)
 		errResp.Msg = response.S3Error
 		response := BuildResponse(502, response.ToString(&errResp))
 		return response, nil
