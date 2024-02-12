@@ -95,7 +95,6 @@ func DynamoGetItems(tableName string) ([]metadata.Metadata, error) {
 			log.Println(err)
 			return nil, err
 		}
-		log.Println(md.FileName)
 		mds = append(mds, md)
 	}
 	return mds, nil

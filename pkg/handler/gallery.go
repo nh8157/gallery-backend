@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -20,15 +19,30 @@ type Metadata struct {
 
 func HandleGalleryGet(requests events.APIGatewayProxyRequest, svc *s3.S3) (events.APIGatewayProxyResponse, error) {
 	var errResp response.ErrorResponse
+	// retrieve metadata
 	mds, err := dynamo.DynamoGetItems("gallery")
 	if err != nil {
-		fmt.Printf("unable to get items: %s\n", err)
+		log.Printf("unable to get items: %s\n", err)
 		errResp.Msg = err.Error()
 		return BuildResponse(502, response.ToString(&errResp)), nil
 	}
+	// get presigned urls from s3
+	for i := range mds {
+		req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+			Bucket: aws.String(os.Getenv("s3_bucket_name")),
+			Key:    aws.String(*mds[i].FileName),
+		})
+		urlStr, err := req.Presign(15 * time.Minute)
+		if err != nil {
+			log.Printf("unable to generate presigned url for %s", *mds[i].FileName)
+			errResp.Msg = response.S3Error
+			return BuildResponse(502, response.ToString(&errResp)), nil
+		}
+		mds[i].S3Url = &urlStr
+	}
 	marshalled, err := json.Marshal(mds)
 	if err != nil {
-		fmt.Printf("unable to marshal JSON: %s\n", err)
+		log.Printf("unable to marshal JSON: %s\n", err)
 		errResp.Msg = err.Error()
 		return BuildResponse(500, response.ToString(&errResp)), err
 	}

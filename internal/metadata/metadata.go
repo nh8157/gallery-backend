@@ -22,6 +22,7 @@ type Metadata struct {
 	ApertureValue     *string
 	ISOSpeedRatings   *string
 	ShutterSpeedValue *string
+	S3Url             *string
 }
 
 func (md *Metadata) ToMap() map[string]string {
