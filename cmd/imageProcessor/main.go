@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -52,6 +51,4 @@ func handleUploadEvent(event events.S3Event) {
 		log.Println(err)
 		return
 	}
-
-	fmt.Println("Saved to DynamoDB")
 }
