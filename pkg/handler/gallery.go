@@ -9,13 +9,10 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/nh8157/gallery-backend/internal/metadata"
 	"github.com/nh8157/gallery-backend/internal/response"
 	"github.com/nh8157/gallery-backend/pkg/dynamo"
 )
-
-type Metadata struct {
-	FileName string `json:"fileName"`
-}
 
 func HandleGalleryGet(requests events.APIGatewayProxyRequest, svc *s3.S3) (events.APIGatewayProxyResponse, error) {
 	var errResp response.ErrorResponse
@@ -32,7 +29,7 @@ func HandleGalleryGet(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 			Bucket: aws.String(os.Getenv("s3_bucket_name")),
 			Key:    aws.String(*mds[i].FileName),
 		})
-		urlStr, err := req.Presign(15 * time.Minute)
+		urlStr, err := req.Presign(60 * time.Minute)
 		if err != nil {
 			log.Printf("unable to generate presigned url for %s", *mds[i].FileName)
 			errResp.Msg = response.S3Error
@@ -50,9 +47,9 @@ func HandleGalleryGet(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 }
 
 func HandleGalleryPut(requests events.APIGatewayProxyRequest, svc *s3.S3) (events.APIGatewayProxyResponse, error) {
-	var metadata Metadata
+	var md metadata.Metadata
 	var errResp response.ErrorResponse
-	err := json.Unmarshal([]byte(requests.Body), &metadata)
+	err := json.Unmarshal([]byte(requests.Body), &md)
 	if err != nil {
 		log.Printf("cannot marshal JSON: %s\n", err)
 		errResp.Msg = response.JsonParseError
@@ -60,7 +57,7 @@ func HandleGalleryPut(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 		return response, nil
 	}
 
-	item, err := dynamo.DynamoGetItem("gallery", metadata.FileName)
+	item, err := dynamo.DynamoGetItem("gallery", *md.FileName)
 	if err != nil {
 		log.Printf("unable to get items: %s\n", err)
 		errResp.Msg = response.DynamoDbError
@@ -73,7 +70,7 @@ func HandleGalleryPut(requests events.APIGatewayProxyRequest, svc *s3.S3) (event
 
 	req, _ := svc.PutObjectRequest(&s3.PutObjectInput{
 		Bucket: aws.String(os.Getenv("s3_bucket_name")),
-		Key:    aws.String(metadata.FileName),
+		Key:    aws.String(*md.FileName),
 	})
 	urlStr, err := req.Presign(5 * time.Minute)
 
@@ -103,7 +100,7 @@ func HandleGalleryPatch(requests events.APIGatewayProxyRequest, svc *s3.S3) (eve
 }
 
 func HandleGalleryDelete(requests events.APIGatewayProxyRequest, svc *s3.S3) (events.APIGatewayProxyResponse, error) {
-	var md Metadata
+	var md metadata.Metadata
 	var errResp response.ErrorResponse
 	err := json.Unmarshal([]byte(requests.Body), &md)
 	if err != nil {
@@ -113,7 +110,7 @@ func HandleGalleryDelete(requests events.APIGatewayProxyRequest, svc *s3.S3) (ev
 		return response, nil
 	}
 
-	err = dynamo.DynamoDelete("gallery", md.FileName)
+	err = dynamo.DynamoDelete("gallery", *md.FileName)
 	if err != nil {
 		log.Printf("unable to delete metadata from database: %s\n", err)
 		errResp.Msg = response.DynamoDbError
@@ -123,7 +120,7 @@ func HandleGalleryDelete(requests events.APIGatewayProxyRequest, svc *s3.S3) (ev
 
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(os.Getenv("s3_bucket_name")),
-		Key:    aws.String(md.FileName),
+		Key:    aws.String(*md.FileName),
 	})
 
 	if err != nil {
